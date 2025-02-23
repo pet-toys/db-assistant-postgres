@@ -1,0 +1,15 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove(Directory.Packages.props, $(MSBuildThisFileDirectory)..))" />
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net8.0'">
+    <NpgsqlVersion>[8.0.6,10.0.0)</NpgsqlVersion>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(TargetFramework)' == 'net9.0'">
+    <NpgsqlVersion>[9.0.2,10.0.0)</NpgsqlVersion>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageVersion Include="Npgsql" Version="$(NpgsqlVersion)" />
+  </ItemGroup>
+  <ItemGroup>
+    <GlobalPackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" />
+  </ItemGroup>
+</Project>
