@@ -32,9 +32,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{4DFB9482-3AFA-45E5-BD29-33B0F2B60FEB}"
 	ProjectSection(SolutionItems) = preProject
-		assets\ad.png = assets\ad.png
 		assets\icon.png = assets\icon.png
 		assets\RELEASE-NOTES.txt = assets\RELEASE-NOTES.txt
+		assets\promotion.png = assets\promotion.png
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0253780F-107F-4DA3-942F-61A780E1B571}"

@@ -28,7 +28,7 @@
     <PackageProjectUrl>https://github.com/pet-toys/db-assistant-postgres</PackageProjectUrl>
     <PackageTags>postgres;sql;bulk;performance;npgsql</PackageTags>
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
-    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
     <PackageRequireLicenseAcceptance>true</PackageRequireLicenseAcceptance>
   </PropertyGroup>
 
