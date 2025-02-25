@@ -101,7 +101,7 @@ jobs:
 
   deploy-github:
     needs: validation
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     environment: 
       name: development
       url: ${{ env.DevRepositoryUrl }}
@@ -117,19 +117,20 @@ jobs:
       with:
         name: ${{ env.ArtifactName }}
 
-    - name: Setup NuGet
-      uses: nuget/setup-nuget@v2
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
       with:
-        nuget-version: 'latest'
+        global-json-file: global.json
 
     - name: Push to github
       working-directory: ${{ env.PackagesSubfolder }}
       run: |
-        nuget push "*.nupkg" -ApiKey ${{ secrets.GITHUB_TOKEN }} -SkipDuplicate -Source ${{ env.GitHubPackageSource }}
+        dotnet nuget push "*.nupkg" -k ${{ secrets.GITHUB_TOKEN }} -s ${{ env.GitHubPackageSource }} --skip-duplicate
+        #nuget push "*.nupkg" -ApiKey ${{ secrets.GITHUB_TOKEN }} -SkipDuplicate -Source ${{ env.GitHubPackageSource }}
  
   deploy-nuget:
     needs: validation
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     environment: 
       name: production
       url: ${{ env.ProdRepositoryUrl }}
