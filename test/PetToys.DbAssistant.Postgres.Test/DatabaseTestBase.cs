@@ -19,8 +19,6 @@ public abstract class DatabaseTestBase
 
         var configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())
-            .AddJsonFile("appsettings.json")
-            .AddEnvironmentVariables()
             .AddUserSecrets<DatabaseTestBase>()
             .Build();
         var builder = new NpgsqlConnectionStringBuilder(configuration.GetConnectionString("TestPgConnection"));

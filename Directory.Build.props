@@ -6,6 +6,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
+    <PackageTargetFrameworks>net8.0;net9.0</PackageTargetFrameworks>
     <LangVersion>12.0</LangVersion>
     <Nullable>enable</Nullable>
     <ImplicitUsings>disable</ImplicitUsings>

@@ -36,8 +36,8 @@ Requests for additional functionality and pull requests are welcome.
 ---
 Provided under the [Apache License, Version 2.0](http://apache.org/licenses/LICENSE-2.0.html).
 
-[nuget-v-badge]: https://img.shields.io/nuget/v/PetToys.DbAssistant.Postgres.svg
-[nuget-dt-badge]: https://img.shields.io/nuget/dt/PetToys.DbAssistant.Postgres.svg
+[nuget-v-badge]: https://img.shields.io/nuget/v/PetToys.DbAssistant.Postgres?style=flat-square&logo=nuget&label=version
+[nuget-dt-badge]: https://img.shields.io/nuget/dt/PetToys.DbAssistant.Postgres?style=flat-square&logo=nuget
 [nuget-url]: https://www.nuget.org/packages/PetToys.DbAssistant.Postgres/
-[test-badge]: https://github.com/pet-toys/db-assistant-postgres/actions/workflows/test.yml/badge.svg?branch=dev
+[test-badge]: https://img.shields.io/github/actions/workflow/status/pet-toys/db-assistant-postgres/test.yml?branch=dev&style=flat-square&logo=github&label=test
 [test-url]: https://github.com/pet-toys/db-assistant-postgres/actions?query=workflow%3Atest+branch%3Adev
