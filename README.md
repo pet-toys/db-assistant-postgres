@@ -10,7 +10,7 @@
 
 - High-performance insertion of large data into a table (`COPY table(column definitions) FROM STDIN BINARY;` feature)
     - Accepts `IEnumerable<TEntity>` and `IAsyncEnumerable<TEntity>`
-    - Supports mapping of entity properties to table columns (e.g. `MapJson`, `MapMoney`, `MapDateTime`, etc.)
+    - Supports mapping of entity properties to table columns (e.g. `MapJson`, `MapMoney`, `MapTimeStamp`, etc.)
     - For better performance, it is recommended to insert data into a temporary table that has no indexes or keys. After that, you can copy data from the temporary table to the target table.
 
 #### Usage

@@ -4,9 +4,6 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.13.35818.85
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{02EA681E-C7D8-13C7-8484-4AC65E1B71E8}"
-	ProjectSection(SolutionItems) = preProject
-		src\Directory.Packages.props = src\Directory.Packages.props
-	EndProjectSection
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PetToys.DbAssistant.Postgres", "src\PetToys.DbAssistant.Postgres\PetToys.DbAssistant.Postgres.csproj", "{11DB7746-3BC8-477C-8956-CAB27B252611}"
 EndProject
@@ -26,15 +23,15 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		Directory.Packages.props = Directory.Packages.props
 		global.json = global.json
 		LICENSE = LICENSE
-		NuGet.Config = NuGet.Config
+		nuget.config = nuget.config
 		README.md = README.md
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "assets", "assets", "{4DFB9482-3AFA-45E5-BD29-33B0F2B60FEB}"
 	ProjectSection(SolutionItems) = preProject
 		assets\icon.png = assets\icon.png
-		assets\RELEASE-NOTES.txt = assets\RELEASE-NOTES.txt
 		assets\promotion.png = assets\promotion.png
+		assets\RELEASE-NOTES.txt = assets\RELEASE-NOTES.txt
 	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docs", "docs", "{0253780F-107F-4DA3-942F-61A780E1B571}"
