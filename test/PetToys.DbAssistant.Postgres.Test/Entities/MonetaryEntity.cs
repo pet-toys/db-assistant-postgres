@@ -10,7 +10,4 @@ internal sealed class MonetaryEntity
 
     [DbColumn("nullable_money", NpgsqlDbType.Money, true)]
     public decimal? NullableMoney { get; init; }
-
-    [DbColumn("nullable_money_has_value", NpgsqlDbType.Money, true)]
-    public decimal? NullableMoneyHasValue { get; init; } = Math.Round(decimal.MinValue / 1_000_000_000_000, 2);
 }

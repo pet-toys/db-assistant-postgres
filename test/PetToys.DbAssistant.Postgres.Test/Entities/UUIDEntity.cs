@@ -10,7 +10,4 @@ internal sealed class UUIDEntity
 
     [DbColumn("nullable_uuid", NpgsqlDbType.Uuid, true)]
     public Guid? NullableUUID { get; init; }
-
-    [DbColumn("nullable_uuid_has_value", NpgsqlDbType.Uuid, true)]
-    public Guid? NullableUUIDHasValue { get; init; } = Guid.NewGuid();
 }
