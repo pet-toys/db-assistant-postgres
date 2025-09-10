@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Bogus;
-using FluentAssertions;
+using AwesomeAssertions;
 using Npgsql;
 using PetToys.DbAssistant.Postgres.Extensions;
 using PetToys.DbAssistant.Postgres.Test.Entities;
