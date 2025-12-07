@@ -15,7 +15,6 @@ using Xunit;
 
 namespace PetToys.DbAssistant.Postgres.Test.Bulk;
 
-[Trait("Category", "Integration")]
 public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper output)
     : IClassFixture<PostgresFixture>
 {
@@ -107,7 +106,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         .RuleFor(e => e.UUID, f => f.Random.Guid())
         .RuleFor(e => e.NullableUUID, f => f.Random.Guid().OrNull(f, .1f));
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task Binary_Test()
     {
         var data = FakeBinaryEntity.Generate(BatchSize);
@@ -126,7 +125,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task Boolean_Test()
     {
         var data = FakeBooleanEntity.Generate(BatchSize);
@@ -145,7 +144,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task DateTime_Test()
     {
         var data = FakeDateTimeEntity.Generate(BatchSize);
@@ -183,7 +182,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task Json_Test()
     {
         var data = FakeJsonEntity.Generate(BatchSize);
@@ -204,7 +203,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task Monetary_Test()
     {
         var data = FakeMonetaryEntity.Generate(BatchSize);
@@ -223,7 +222,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task NetworkAddress_Test()
     {
         var data = FakeNetworkAddressEntity.Generate(BatchSize);
@@ -244,7 +243,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task Numeric_Test()
     {
         var data = FakeNumericEntity.Generate(BatchSize);
@@ -279,7 +278,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task String_Test()
     {
         var data = FakeStringEntity.Generate(BatchSize);
@@ -304,7 +303,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         await connection.CloseAsync();
     }
 
-    [Fact]
+    [LinuxOnlyFact]
     public async Task UUID_Test()
     {
         var data = FakeUUIDEntity.Generate(BatchSize);

@@ -26,10 +26,7 @@ internal static class SnakeCaseNameRewriter
             {
                 case UnicodeCategory.UppercaseLetter:
                 case UnicodeCategory.TitlecaseLetter:
-                    if ((previousCategory == UnicodeCategory.SpaceSeparator
-                        || previousCategory == UnicodeCategory.LowercaseLetter
-                        || previousCategory != UnicodeCategory.DecimalDigitNumber)
-                        && previousCategory != null
+                    if (previousCategory is UnicodeCategory.SpaceSeparator or UnicodeCategory.LowercaseLetter
                         && currentIndex > 0
                         && currentIndex + 1 < name.Length
                         && char.IsLower(name[currentIndex + 1]))
