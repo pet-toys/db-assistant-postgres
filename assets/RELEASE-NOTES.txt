@@ -1,0 +1,21 @@
+10.1.0
+======
+
+Fixed:
+- Identifier quoting now escapes embedded double quotes, so a table, schema, or
+  column name that contains '"' is quoted correctly in the generated COPY
+  command (for example, My"Table becomes "My""Table"). The previous
+  already-quoted heuristic, which skipped quoting when the name started or ended
+  with a quote, has been removed.
+- The README usage example now calls WriteDataAsync, the actual API, instead of
+  the nonexistent InsertAsync, and spells the dependency "Npgsql".
+
+Changed:
+- CreateBulkContext now validates its arguments: it throws ArgumentNullException
+  for a null connection and ArgumentException for a null or whitespace table or
+  schema name. WriteDataAsync throws ArgumentNullException when the entity
+  collection is null, and the Map* methods throw ArgumentException for a null or
+  whitespace column name.
+- Mapping the same column twice now throws InvalidOperationException naming the
+  duplicated column, instead of silently producing an invalid COPY command that
+  failed later on the server.
