@@ -187,7 +187,7 @@ More runnable examples live in the [unit tests][tests-url].
 - Whatever the next real use case calls for.
 
 This package is built for its author's own needs; feature requests and pull
-requests are welcome. See [Contributing](docs/CONTRIBUTING.md) to get started.
+requests are welcome. See [Contributing][contributing] to get started.
 
 ## License
 
@@ -201,6 +201,7 @@ Provided under the [Apache License, Version 2.0][license-url].
 [dotnet-badge]: https://img.shields.io/badge/.NET-8.0%20%7C%209.0%20%7C%2010.0-512BD4?style=flat-square&logo=dotnet
 [license-badge]: https://img.shields.io/github/license/pet-toys/db-assistant-postgres?style=flat-square&color=blue
 [license-url]: https://www.apache.org/licenses/LICENSE-2.0
+[contributing]: https://github.com/pet-toys/db-assistant-postgres/blob/dev/docs/CONTRIBUTING.md
 [npgsql]: https://www.nuget.org/packages/Npgsql/
 [binary-import]: https://www.npgsql.org/doc/copy.html#binary-copy
 [tests-url]: https://github.com/pet-toys/db-assistant-postgres/tree/dev/test/PetToys.DbAssistant.Postgres.Test
