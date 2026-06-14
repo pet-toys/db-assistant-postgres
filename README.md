@@ -4,7 +4,7 @@
 
 ![promotion](https://raw.githubusercontent.com/pet-toys/db-assistant-postgres/refs/heads/dev/assets/promotion.png)
 
-***DbAssistant.Postgres*** is the open source .net library with nice wrappers for [Ngsql](https://www.nuget.org/packages/npgsql/).
+***DbAssistant.Postgres*** is the open source .net library with nice wrappers for [Npgsql](https://www.nuget.org/packages/npgsql/).
 
 #### Key features:
 
@@ -22,7 +22,7 @@ var result = await connection.CreateBulkContext<BusinessEntity>("table_name")
             .MapJson("column_json", entity => entity.Data)
             .MapMoney("column_money", entity => entity.Money)
             /* ... */
-            .InsertAsync(entities);
+            .WriteDataAsync(entities);
 ```
 
 #### Roadmap:
