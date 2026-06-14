@@ -33,6 +33,7 @@ public sealed class BulkContextBuilder<TEntity>
 
     public async ValueTask<ulong> WriteDataAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(entities);
         if (_columns.Count == 0) return 0;
         var wasClosed = _connection.State == ConnectionState.Closed;
         try
@@ -50,6 +51,7 @@ public sealed class BulkContextBuilder<TEntity>
 
     public async ValueTask<ulong> WriteDataAsync(IAsyncEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
+        ArgumentNullException.ThrowIfNull(entities);
         if (_columns.Count == 0) return 0;
         var wasClosed = _connection.State == ConnectionState.Closed;
         try

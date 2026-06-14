@@ -41,6 +41,16 @@ public sealed class BulkContextValidationTest
     }
 
     [Fact]
+    public void CreateBulkContext_NullConnection_ThrowsForConnection()
+    {
+        NpgsqlConnection connection = null!;
+
+        var act = () => connection.CreateBulkContext<Sample>("orders");
+
+        act.Should().Throw<ArgumentNullException>().WithParameterName("connection");
+    }
+
+    [Fact]
     public void CreateBulkContext_NullSchemaName_IsAllowed()
     {
         using var connection = new NpgsqlConnection();
@@ -141,5 +151,42 @@ public sealed class BulkContextValidationTest
             await Task.CompletedTask;
             yield return new Sample();
         }
+    }
+
+    [Fact]
+    public async Task WriteDataAsync_NullEntities_ThrowsForEntities_AndLeavesConnectionClosed()
+    {
+        using var connection = new NpgsqlConnection();
+        var context = connection.CreateBulkContext<Sample>("orders")
+            .MapText("name", entity => entity.Name);
+
+        var act = async () => await context.WriteDataAsync((IEnumerable<Sample>)null!, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("entities");
+        connection.State.Should().Be(ConnectionState.Closed);
+    }
+
+    [Fact]
+    public async Task WriteDataAsync_NullAsyncEntities_ThrowsForEntities_AndLeavesConnectionClosed()
+    {
+        using var connection = new NpgsqlConnection();
+        var context = connection.CreateBulkContext<Sample>("orders")
+            .MapText("name", entity => entity.Name);
+
+        var act = async () => await context.WriteDataAsync((IAsyncEnumerable<Sample>)null!, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("entities");
+        connection.State.Should().Be(ConnectionState.Closed);
+    }
+
+    [Fact]
+    public async Task WriteDataAsync_NullEntities_NoColumnsMapped_ThrowsInsteadOfReturningZero()
+    {
+        using var connection = new NpgsqlConnection();
+        var context = connection.CreateBulkContext<Sample>("orders");
+
+        var act = async () => await context.WriteDataAsync((IEnumerable<Sample>)null!, TestContext.Current.CancellationToken);
+
+        await act.Should().ThrowAsync<ArgumentNullException>().WithParameterName("entities");
     }
 }
