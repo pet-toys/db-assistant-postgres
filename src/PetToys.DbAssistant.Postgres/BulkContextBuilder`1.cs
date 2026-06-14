@@ -20,6 +20,12 @@ public sealed class BulkContextBuilder<TEntity>
 
     internal BulkContextBuilder(NpgsqlConnection connection, string tableName, string? schemaName)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(tableName);
+        if (schemaName is not null)
+        {
+            ArgumentException.ThrowIfNullOrWhiteSpace(schemaName);
+        }
+
         _connection = connection;
         _tableName = tableName;
         _schemaName = schemaName;
@@ -61,6 +67,8 @@ public sealed class BulkContextBuilder<TEntity>
 
     internal BulkContextBuilder<TEntity> Map<TProperty>(string columnName, Func<TEntity, TProperty?> getter, NpgsqlDbType dbType)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(columnName);
+
         return AddColumn(
             columnName,
             async (writer, entity, cancellationToken) =>
@@ -108,6 +116,11 @@ public sealed class BulkContextBuilder<TEntity>
 
     private BulkContextBuilder<TEntity> AddColumn(string columnName, Func<NpgsqlBinaryImporter, TEntity, CancellationToken, Task> action, NpgsqlDbType dbType, Type clrType)
     {
+        if (_columns.Any(column => string.Equals(column.ColumnName, columnName, StringComparison.Ordinal)))
+        {
+            throw new InvalidOperationException($"Column '{columnName}' is already mapped.");
+        }
+
         _columns.Add(new ColumnDefinition<TEntity>
         {
             ColumnName = columnName,
