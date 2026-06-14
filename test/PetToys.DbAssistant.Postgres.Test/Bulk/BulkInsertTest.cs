@@ -1,4 +1,5 @@
-﻿using System;
+using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -106,226 +107,237 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         .RuleFor(e => e.UUID, f => f.Random.Guid())
         .RuleFor(e => e.NullableUUID, f => f.Random.Guid().OrNull(f, .1f));
 
-    [LinuxOnlyFact]
-    public async Task Binary_Test()
+    private static readonly Faker<RoundTripEntity> FakeRoundTripEntity = new Faker<RoundTripEntity>()
+        .StrictMode(true)
+        .RuleFor(e => e.Id, f => f.IndexFaker)
+        .RuleFor(e => e.Label, f => f.Lorem.Word().OrNull(f, .1f))
+        .RuleFor(e => e.Flag, f => f.Random.Bool())
+        .RuleFor(e => e.Amount, f => f.Random.Decimal())
+        .RuleFor(e => e.Identifier, f => f.Random.Guid())
+        .RuleFor(e => e.Payload, f => f.Random.Bytes(16).OrNull(f, .1f))
+        .RuleFor(e => e.CreatedAt, f => f.Date.Future());
+
+    [DockerRequiredFact]
+    public Task Binary_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeBinaryEntity.Generate(BatchSize),
+            builder => builder
+                .MapByteArray("bytes", entity => entity.Bytes)
+                .MapByteArray("nullable_bytes", entity => entity.NullableBytes));
+
+    [DockerRequiredFact]
+    public Task Boolean_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeBooleanEntity.Generate(BatchSize),
+            builder => builder
+                .MapBoolean("boolean", entity => entity.Boolean)
+                .MapBoolean("nullable_boolean", entity => entity.NullableBoolean));
+
+    [DockerRequiredFact]
+    public Task DateTime_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeDateTimeEntity.Generate(BatchSize),
+            builder => builder
+                .MapDate("datetime_date", entity => entity.DateTimeToDate)
+                .MapDate("nullable_datetime_date", entity => entity.NullableDateTimeToDate)
+
+                .MapTime("timespan_time", entity => entity.TimeSpanToTime)
+                .MapTime("nullable_timespan_time", entity => entity.NullableTimeSpanToTime)
+
+                .MapTimeStamp("datetime_timestamp", entity => entity.DateTimeToTimestamp)
+                .MapTimeStamp("nullable_datetime_timestamp", entity => entity.NullableDateTimeToTimestamp)
+
+                .MapTimeStampTz("datetime_timestamp_tz", entity => entity.DateTimeToTimestampTz)
+                .MapTimeStampTz("nullable_datetime_timestamp_tz", entity => entity.NullableDateTimeToTimestampTz)
+
+                .MapTimeStampTz("datetime_offset_timestamp_tz", entity => entity.DateTimeOffsetToTimestampTz)
+                .MapTimeStampTz("nullable_datetime_offset_timestamp_tz", entity => entity.NullableDateTimeOffsetToTimestampTz)
+
+                .MapInterval("timespan_interval", entity => entity.TimeSpanToInterval)
+                .MapInterval("nullable_timespan_interval", entity => entity.NullableTimeSpanToInterval)
+
+                .MapTimeTz("datetime_offset_time_tz", entity => entity.DateTimeOffsetToTimeTz)
+                .MapTimeTz("nullable_datetime_offset_time_tz", entity => entity.NullableDateTimeOffsetToTimeTz));
+
+    [DockerRequiredFact]
+    public Task Json_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeJsonEntity.Generate(BatchSize),
+            builder => builder
+                .MapJson("json", entity => entity.Json)
+                .MapJson("nullable_json", entity => entity.NullableJson)
+                .MapJsonb("jsonb", entity => entity.Jsonb)
+                .MapJsonb("nullable_jsonb", entity => entity.NullableJsonb));
+
+    [DockerRequiredFact]
+    public Task Monetary_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeMonetaryEntity.Generate(BatchSize),
+            builder => builder
+                .MapMoney("money", entity => entity.Money)
+                .MapMoney("nullable_money", entity => entity.NullableMoney));
+
+    [DockerRequiredFact]
+    public Task NetworkAddress_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeNetworkAddressEntity.Generate(BatchSize),
+            builder => builder
+                .MapInetAddress("ip_address", entity => entity.IpAddress)
+                .MapInetAddress("nullable_ip_address", entity => entity.NullableIpAddress)
+                .MapMacAddress("mac_addr", entity => entity.MacAddress)
+                .MapMacAddress("nullable_mac_addr", entity => entity.NullableMacAddress));
+
+    [DockerRequiredFact]
+    public Task Numeric_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeNumericEntity.Generate(BatchSize),
+            builder => builder
+                .MapSmallInt("smallint", entity => entity.Smallint)
+                .MapSmallInt("nullable_smallint", entity => entity.NullableSmallint)
+
+                .MapInteger("integer", entity => entity.IntegerCol)
+                .MapInteger("nullable_integer", entity => entity.NullableInteger)
+
+                .MapBigInt("bigint", entity => entity.Bigint)
+                .MapBigInt("nullable_bigint", entity => entity.NullableBigint)
+
+                .MapNumeric("numeric", entity => entity.Numeric)
+                .MapNumeric("nullable_numeric", entity => entity.NullableNumeric)
+
+                .MapReal("real", entity => entity.Real)
+                .MapReal("nullable_real", entity => entity.NullableReal)
+
+                .MapDouble("double", entity => entity.DoubleCol)
+                .MapDouble("nullable_double", entity => entity.NullableDouble));
+
+    [DockerRequiredFact]
+    public Task String_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeStringEntity.Generate(BatchSize),
+            builder => builder
+                .MapVarchar("string_varchar", entity => entity.StringToVarchar)
+                .MapVarchar("nullable_string_varchar", entity => entity.NullableStringToVarchar)
+
+                .MapCharacter("string_char", entity => entity.StringToChar)
+                .MapCharacter("nullable_string_char", entity => entity.NullableStringToChar)
+
+                .MapText("text", entity => entity.Text)
+                .MapText("nullable_text", entity => entity.NullableText));
+
+    [DockerRequiredFact]
+    public Task UUID_BulkInsert_CopiesEveryRow() =>
+        RunBulkAsync(
+            FakeUUIDEntity.Generate(BatchSize),
+            builder => builder
+                .MapUUID("uuid", entity => entity.UUID)
+                .MapUUID("nullable_uuid", entity => entity.NullableUUID));
+
+    [DockerRequiredFact]
+    public async Task BulkInsert_RoundTrips_ValuesAndNulls()
     {
-        var data = FakeBinaryEntity.Generate(BatchSize);
-        var tableName = TableName<BinaryEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<BinaryEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<BinaryEntity>(tableName)
-            .MapByteArray("bytes", entity => entity.Bytes)
-            .MapByteArray("nullable_bytes", entity => entity.NullableBytes)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tableName = TableName<RoundTripEntity>();
+        var createdAt = new DateTime(2026, 6, 14, 10, 30, 0, DateTimeKind.Unspecified);
+        var identifier = new Guid("11112222-3333-4444-5555-666677778888");
+        var rows = new List<RoundTripEntity>
+        {
+            new() { Id = 1, Label = "alpha", Flag = true, Amount = 123.45m, Identifier = identifier, Payload = [1, 2, 3], CreatedAt = createdAt },
+            new() { Id = 2, Label = null, Flag = false, Amount = -0.01m, Identifier = Guid.Empty, Payload = null, CreatedAt = createdAt },
+        };
+
+        await using var connection = await OpenConnectionAndCreateTableAsync<RoundTripEntity>(tableName);
+        var written = await MapRoundTrip(connection.CreateBulkContext<RoundTripEntity>(tableName))
+            .WriteDataAsync(rows, cancellationToken);
+        written.Should().Be((ulong)rows.Count);
+
+        await using var command = connection.CreateCommand();
+        command.CommandText = $"SELECT id, label, flag, amount, identifier, payload, created_at FROM {tableName.QuoteIdentifier()} ORDER BY id;";
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+
+        (await reader.ReadAsync(cancellationToken)).Should().BeTrue();
+        reader.GetInt32(0).Should().Be(1);
+        reader.GetString(1).Should().Be("alpha");
+        reader.GetBoolean(2).Should().BeTrue();
+        reader.GetDecimal(3).Should().Be(123.45m);
+        reader.GetGuid(4).Should().Be(identifier);
+        reader.GetFieldValue<byte[]>(5).Should().Equal(new byte[] { 1, 2, 3 });
+        reader.GetDateTime(6).Should().Be(createdAt);
+
+        (await reader.ReadAsync(cancellationToken)).Should().BeTrue();
+        reader.GetInt32(0).Should().Be(2);
+        reader.IsDBNull(1).Should().BeTrue();
+        reader.GetBoolean(2).Should().BeFalse();
+        reader.GetDecimal(3).Should().Be(-0.01m);
+        reader.GetGuid(4).Should().Be(Guid.Empty);
+        reader.IsDBNull(5).Should().BeTrue();
+        reader.GetDateTime(6).Should().Be(createdAt);
+
+        (await reader.ReadAsync(cancellationToken)).Should().BeFalse();
     }
 
-    [LinuxOnlyFact]
-    public async Task Boolean_Test()
+    [DockerRequiredFact]
+    public async Task BulkInsert_EmptyCollection_WritesNothing()
     {
-        var data = FakeBooleanEntity.Generate(BatchSize);
-        var tableName = TableName<BooleanEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<BooleanEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<BooleanEntity>(tableName)
-            .MapBoolean("boolean", entity => entity.Boolean)
-            .MapBoolean("nullable_boolean", entity => entity.NullableBoolean)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tableName = TableName<RoundTripEntity>();
+
+        await using var connection = await OpenConnectionAndCreateTableAsync<RoundTripEntity>(tableName);
+        var written = await MapRoundTrip(connection.CreateBulkContext<RoundTripEntity>(tableName))
+            .WriteDataAsync(Array.Empty<RoundTripEntity>(), cancellationToken);
+
+        written.Should().Be(0UL);
+        (await ExecuteCountAsync(connection, tableName, cancellationToken)).Should().Be(0);
     }
 
-    [LinuxOnlyFact]
-    public async Task DateTime_Test()
+    [DockerRequiredFact]
+    public async Task BulkInsert_AsyncEnumerableSource_CopiesEveryRow()
     {
-        var data = FakeDateTimeEntity.Generate(BatchSize);
-        var tableName = TableName<DateTimeEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<DateTimeEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<DateTimeEntity>(tableName)
-            .MapDate("datetime_date", entity => entity.DateTimeToDate)
-            .MapDate("nullable_datetime_date", entity => entity.NullableDateTimeToDate)
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tableName = TableName<RoundTripEntity>();
+        var rows = FakeRoundTripEntity.Generate(2_000);
 
-            .MapTime("timespan_time", entity => entity.TimeSpanToTime)
-            .MapTime("nullable_timespan_time", entity => entity.NullableTimeSpanToTime)
+        await using var connection = await OpenConnectionAndCreateTableAsync<RoundTripEntity>(tableName);
+        var written = await MapRoundTrip(connection.CreateBulkContext<RoundTripEntity>(tableName))
+            .WriteDataAsync(ToAsyncEnumerable(rows), cancellationToken);
 
-            .MapTimeStamp("datetime_timestamp", entity => entity.DateTimeToTimestamp)
-            .MapTimeStamp("nullable_datetime_timestamp", entity => entity.NullableDateTimeToTimestamp)
-
-            .MapTimeStampTz("datetime_timestamp_tz", entity => entity.DateTimeToTimestampTz)
-            .MapTimeStampTz("nullable_datetime_timestamp_tz", entity => entity.NullableDateTimeToTimestampTz)
-
-            .MapTimeStampTz("datetime_offset_timestamp_tz", entity => entity.DateTimeOffsetToTimestampTz)
-            .MapTimeStampTz("nullable_datetime_offset_timestamp_tz", entity => entity.NullableDateTimeOffsetToTimestampTz)
-
-            .MapInterval("timespan_interval", entity => entity.TimeSpanToInterval)
-            .MapInterval("nullable_timespan_interval", entity => entity.NullableTimeSpanToInterval)
-
-            .MapTimeTz("datetime_offset_time_tz", entity => entity.DateTimeOffsetToTimeTz)
-            .MapTimeTz("nullable_datetime_offset_time_tz", entity => entity.NullableDateTimeOffsetToTimeTz)
-
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
+        written.Should().Be((ulong)rows.Count);
+        (await ExecuteCountAsync(connection, tableName, cancellationToken)).Should().Be(rows.Count);
     }
 
-    [LinuxOnlyFact]
-    public async Task Json_Test()
+    private static BulkContextBuilder<RoundTripEntity> MapRoundTrip(BulkContextBuilder<RoundTripEntity> builder) =>
+        builder
+            .MapInteger("id", entity => entity.Id)
+            .MapText("label", entity => entity.Label)
+            .MapBoolean("flag", entity => entity.Flag)
+            .MapNumeric("amount", entity => entity.Amount)
+            .MapUUID("identifier", entity => entity.Identifier)
+            .MapByteArray("payload", entity => entity.Payload)
+            .MapTimeStamp("created_at", entity => entity.CreatedAt);
+
+    private async Task RunBulkAsync<TEntity>(
+        IReadOnlyCollection<TEntity> data,
+        Func<BulkContextBuilder<TEntity>, BulkContextBuilder<TEntity>> configure)
+        where TEntity : class, new()
     {
-        var data = FakeJsonEntity.Generate(BatchSize);
-        var tableName = TableName<JsonEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<JsonEntity>(tableName);
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tableName = TableName<TEntity>();
+        await using var connection = await OpenConnectionAndCreateTableAsync<TEntity>(tableName);
+
         var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<JsonEntity>(tableName)
-            .MapJson("json", entity => entity.Json)
-            .MapJson("nullable_json", entity => entity.NullableJson)
-            .MapJsonb("jsonb", entity => entity.Jsonb)
-            .MapJsonb("nullable_jsonb", entity => entity.NullableJsonb)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
+        var result = await configure(connection.CreateBulkContext<TEntity>(tableName))
+            .WriteDataAsync(data, cancellationToken);
         watch.Stop();
+
         result.Should().Be((ulong)data.Count);
         output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
+        var count = await ExecuteCountAsync(connection, tableName, cancellationToken);
         count.Should().Be(data.Count);
-        await connection.CloseAsync();
-    }
-
-    [LinuxOnlyFact]
-    public async Task Monetary_Test()
-    {
-        var data = FakeMonetaryEntity.Generate(BatchSize);
-        var tableName = TableName<MonetaryEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<MonetaryEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<MonetaryEntity>(tableName)
-            .MapMoney("money", entity => entity.Money)
-            .MapMoney("nullable_money", entity => entity.NullableMoney)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
-    }
-
-    [LinuxOnlyFact]
-    public async Task NetworkAddress_Test()
-    {
-        var data = FakeNetworkAddressEntity.Generate(BatchSize);
-        var tableName = TableName<NetworkAddressEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<NetworkAddressEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<NetworkAddressEntity>(tableName)
-            .MapInetAddress("ip_address", entity => entity.IpAddress)
-            .MapInetAddress("nullable_ip_address", entity => entity.NullableIpAddress)
-            .MapMacAddress("mac_addr", entity => entity.MacAddress)
-            .MapMacAddress("nullable_mac_addr", entity => entity.NullableMacAddress)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
-    }
-
-    [LinuxOnlyFact]
-    public async Task Numeric_Test()
-    {
-        var data = FakeNumericEntity.Generate(BatchSize);
-        var tableName = TableName<NumericEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<NumericEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<NumericEntity>(tableName)
-            .MapSmallInt("smallint", entity => entity.Smallint)
-            .MapSmallInt("nullable_smallint", entity => entity.NullableSmallint)
-
-            .MapInteger("integer", entity => entity.IntegerCol)
-            .MapInteger("nullable_integer", entity => entity.NullableInteger)
-
-            .MapBigInt("bigint", entity => entity.Bigint)
-            .MapBigInt("nullable_bigint", entity => entity.NullableBigint)
-
-            .MapNumeric("numeric", entity => entity.Numeric)
-            .MapNumeric("nullable_numeric", entity => entity.NullableNumeric)
-
-            .MapReal("real", entity => entity.Real)
-            .MapReal("nullable_real", entity => entity.NullableReal)
-
-            .MapDouble("double", entity => entity.DoubleCol)
-            .MapDouble("nullable_double", entity => entity.NullableDouble)
-
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
-    }
-
-    [LinuxOnlyFact]
-    public async Task String_Test()
-    {
-        var data = FakeStringEntity.Generate(BatchSize);
-        var tableName = TableName<StringEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<StringEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<StringEntity>(tableName)
-            .MapVarchar("string_varchar", entity => entity.StringToVarchar)
-            .MapVarchar("nullable_string_varchar", entity => entity.NullableStringToVarchar)
-
-            .MapCharacter("string_char", entity => entity.StringToChar)
-            .MapCharacter("nullable_string_char", entity => entity.NullableStringToChar)
-
-            .MapText("text", entity => entity.Text)
-            .MapText("nullable_text", entity => entity.NullableText)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
-    }
-
-    [LinuxOnlyFact]
-    public async Task UUID_Test()
-    {
-        var data = FakeUUIDEntity.Generate(BatchSize);
-        var tableName = TableName<UUIDEntity>();
-        await using var connection = await OpenConnectionAndCreateTableAsync<UUIDEntity>(tableName);
-        var watch = Stopwatch.StartNew();
-        var result = await connection.CreateBulkContext<UUIDEntity>(tableName)
-            .MapUUID("uuid", entity => entity.UUID)
-            .MapUUID("nullable_uuid", entity => entity.NullableUUID)
-            .WriteDataAsync(data, TestContext.Current.CancellationToken);
-        watch.Stop();
-        result.Should().Be((ulong)data.Count);
-        output.WriteLine("Inserted {0:N0} rows. Elapsed time: {1:N0} ms.", result, watch.ElapsedMilliseconds);
-        var count = await ExecuteCountAsync(connection, tableName, TestContext.Current.CancellationToken);
-        count.Should().Be(data.Count);
-        await connection.CloseAsync();
     }
 
     private async Task<NpgsqlConnection> OpenConnectionAndCreateTableAsync<TEntity>(string tableName)
         where TEntity : class, new()
     {
-        var columnIdentifiers = typeof(TEntity)!
+        var columnIdentifiers = typeof(TEntity)
             .GetProperties(BindingFlags.Public | BindingFlags.Instance)
             .Select(p => p.GetCustomAttribute<DbColumnAttribute>())
             .Where(a => a is not null)
@@ -345,11 +357,19 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
 
     private static async ValueTask<long> ExecuteCountAsync(NpgsqlConnection connection, string tableName, CancellationToken cancellationToken = default)
     {
-        var query = $"SELECT COUNT(*) FROM {tableName};";
         await using var command = connection.CreateCommand();
-        command.CommandText = query;
+        command.CommandText = $"SELECT COUNT(*) FROM {tableName.QuoteIdentifier()};";
         var result = await command.ExecuteScalarAsync(cancellationToken);
         return (long?)result ?? 0;
+    }
+
+    private static async IAsyncEnumerable<TEntity> ToAsyncEnumerable<TEntity>(IEnumerable<TEntity> source)
+    {
+        foreach (var item in source)
+        {
+            yield return item;
+            await Task.Yield();
+        }
     }
 
     private static string TableName<TEntity>() where TEntity : class, new() => SnakeCaseNameRewriter.RewriteName(typeof(TEntity).Name);
