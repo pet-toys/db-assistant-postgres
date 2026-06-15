@@ -174,6 +174,12 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 - **Identifiers are quoted, not sanitized.** Names are wrapped in double quotes
   and embedded quotes are doubled, so `My"Table` becomes `"My""Table"`. Supply
   the raw name; the library never strips quoting you add yourself.
+- **`timestamptz` from a `DateTime` must be UTC.** `MapTimeStampTz` with a
+  `DateTime` getter accepts only `DateTimeKind.Utc`; a `Local` or `Unspecified`
+  value fails the copy with an error naming the column. Convert to UTC
+  (`DateTime.ToUniversalTime()`), or map from a `DateTimeOffset` — the
+  `MapTimeStampTz(..., Func<TEntity, DateTimeOffset?>)` overload carries the
+  offset for you.
 - **Load into a staging table for the best throughput.** Copy into an unindexed
   temporary or staging table first, then insert from there into the indexed
   target. This keeps the copy itself as cheap as possible.

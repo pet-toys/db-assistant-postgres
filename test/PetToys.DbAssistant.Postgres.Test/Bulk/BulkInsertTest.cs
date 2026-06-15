@@ -304,6 +304,26 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         (await ExecuteCountAsync(connection, tableName, cancellationToken)).Should().Be(rows.Count);
     }
 
+    [DockerRequiredFact]
+    public async Task TimeStampTz_NonUtcDateTime_FailsNamingColumnAndUtcRequirement()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tableName = TableName<TimestampTzEntity>();
+        var rows = new[]
+        {
+            new TimestampTzEntity { CreatedAt = new DateTime(2026, 6, 14, 10, 30, 0, DateTimeKind.Local) },
+        };
+
+        await using var connection = await OpenConnectionAndCreateTableAsync<TimestampTzEntity>(tableName);
+        var act = async () => await connection.CreateBulkContext<TimestampTzEntity>(tableName)
+            .MapTimeStampTz("created_at", entity => entity.CreatedAt)
+            .WriteDataAsync(rows, cancellationToken);
+
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*created_at*")
+            .WithMessage("*DateTimeKind.Utc*");
+    }
+
     private static BulkContextBuilder<RoundTripEntity> MapRoundTrip(BulkContextBuilder<RoundTripEntity> builder) =>
         builder
             .MapInteger("id", entity => entity.Id)
