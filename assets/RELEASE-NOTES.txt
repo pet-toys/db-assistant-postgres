@@ -1,3 +1,27 @@
+10.2.0
+======
+
+Removed:
+- MapTimeTz no longer offers the Func<TEntity, TimeSpan?> overload. PostgreSQL
+  timetz carries a UTC offset that a bare TimeSpan cannot supply, so the
+  overload could never write a valid value and threw at copy time. Map timetz
+  from a DateTimeOffset instead. This is source-breaking only for code that
+  referenced the removed overload; no working runtime scenario is affected.
+
+Changed:
+- MapTimeStampTz from a DateTime now requires DateTimeKind.Utc. A Local or
+  Unspecified value fails the copy with an InvalidOperationException that names
+  the offending column and states the UTC requirement, instead of leaking an
+  unqualified Npgsql error from deep in the COPY. For offset-bearing values,
+  use the DateTimeOffset overload of MapTimeStampTz.
+- The library no longer captures the caller's SynchronizationContext: every
+  await uses ConfigureAwait(false). Callers that block on the returned task
+  under a context that serializes continuations (classic ASP.NET, desktop UI)
+  no longer risk a deadlock, and continuations no longer marshal back to a
+  UI or request context.
+
+------------------------------------------------------------------------------
+
 10.1.0
 ======
 
