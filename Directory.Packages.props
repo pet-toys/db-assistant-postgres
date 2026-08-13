@@ -9,7 +9,7 @@
     <NpgsqlVersion Condition="'$(TargetFramework)' == 'net8.0'">[8.0.3,11.0.0)</NpgsqlVersion>
     <NpgsqlVersion Condition="'$(TargetFramework)' == 'net9.0'">[8.0.3,11.0.0)</NpgsqlVersion>
     <NpgsqlVersion Condition="'$(TargetFramework)' == 'net10.0'">[10.0.0,11.0.0)</NpgsqlVersion>
-    <RoslinatorVersion>[4.15.0,)</RoslinatorVersion>
+    <RoslinatorVersion>[4.16.0,)</RoslinatorVersion>
   </PropertyGroup>
   <ItemGroup>
     <PackageVersion Include="Npgsql"  Version="$(NpgsqlVersion)" />
