@@ -23,7 +23,10 @@ public static class NpgsqlConnectionExtensions
     /// resolved through the connection's <c>search_path</c>.
     /// </param>
     /// <returns>A builder to map columns on.</returns>
-    /// <exception cref="ArgumentNullException"><paramref name="connection"/> is <see langword="null"/>.</exception>
+    /// <exception cref="ArgumentNullException">
+    /// <paramref name="connection"/> or <paramref name="tableName"/> is
+    /// <see langword="null"/>.
+    /// </exception>
     /// <exception cref="ArgumentException">
     /// <paramref name="tableName"/>, or a supplied <paramref name="schemaName"/>,
     /// is empty or whitespace.
