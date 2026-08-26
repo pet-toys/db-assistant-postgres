@@ -36,7 +36,6 @@ internal static class SnakeCaseNameRewriter
 
                     currentChar = char.ToLowerInvariant(currentChar);
                     break;
-
                 case UnicodeCategory.LowercaseLetter:
                 case UnicodeCategory.DecimalDigitNumber:
                     if (previousCategory == UnicodeCategory.SpaceSeparator)
@@ -45,7 +44,6 @@ internal static class SnakeCaseNameRewriter
                     }
 
                     break;
-
                 default:
                     if (previousCategory != null)
                     {
