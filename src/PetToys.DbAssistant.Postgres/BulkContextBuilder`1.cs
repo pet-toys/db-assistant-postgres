@@ -10,6 +10,11 @@ using PetToys.DbAssistant.Postgres.Model;
 
 namespace PetToys.DbAssistant.Postgres;
 
+/// <summary>
+/// Maps entity properties to the columns of a destination table and copies the
+/// entities into it with a binary <c>COPY</c>.
+/// </summary>
+/// <typeparam name="TEntity">The entity type being copied.</typeparam>
 public sealed class BulkContextBuilder<TEntity>
     where TEntity : class
 {
@@ -31,6 +36,20 @@ public sealed class BulkContextBuilder<TEntity>
         _schemaName = schemaName;
     }
 
+    /// <summary>
+    /// Copies the entities into the destination table.
+    /// </summary>
+    /// <param name="entities">The entities to copy.</param>
+    /// <param name="cancellationToken">Cancels the copy.</param>
+    /// <returns>
+    /// The number of rows written, or zero when no column has been mapped, in
+    /// which case nothing is sent.
+    /// </returns>
+    /// <remarks>
+    /// A closed connection is opened for the copy and closed again afterwards;
+    /// one that was already open is left open.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="entities"/> is <see langword="null"/>.</exception>
     public async ValueTask<ulong> WriteDataAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entities);
@@ -52,6 +71,20 @@ public sealed class BulkContextBuilder<TEntity>
         }
     }
 
+    /// <summary>
+    /// Copies the entities of an asynchronous sequence into the destination table.
+    /// </summary>
+    /// <param name="entities">The entities to copy.</param>
+    /// <param name="cancellationToken">Cancels the copy.</param>
+    /// <returns>
+    /// The number of rows written, or zero when no column has been mapped, in
+    /// which case nothing is sent.
+    /// </returns>
+    /// <remarks>
+    /// A closed connection is opened for the copy and closed again afterwards;
+    /// one that was already open is left open.
+    /// </remarks>
+    /// <exception cref="ArgumentNullException"><paramref name="entities"/> is <see langword="null"/>.</exception>
     public async ValueTask<ulong> WriteDataAsync(IAsyncEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entities);
