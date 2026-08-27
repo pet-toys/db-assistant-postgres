@@ -9,8 +9,8 @@
   </ItemGroup>
 
   <PropertyGroup Label="NuGet package">
-    <Description>Fluent, strongly-typed bulk insert for PostgreSQL - map each property to its PostgreSQL type and stream entities into Npgsql's binary COPY, with quoted identifiers, null-aware writes, and no hand-rolled importer code.</Description>
-    <PackageTags>sql;postgres;postgresql;npgsql;binary-copy;bulk-insert;bulk-copy;bulk;database;performance</PackageTags>
+    <Description>Fluent, strongly-typed bulk insert for PostgreSQL - map each property to its column type and stream entities straight into Npgsql's binary COPY, with quoted identifiers, null-aware writes, and no hand-rolled importer code.</Description>
+    <PackageTags>sql;postgresql;npgsql;binary-copy;bulk-insert;bulk-copy;data-import;database;performance</PackageTags>
     <PackageReleaseNotes>(Please write the package release notes in "RELEASE-NOTES.txt".)</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageIcon>icon.png</PackageIcon>
