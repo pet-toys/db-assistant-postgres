@@ -1,0 +1,25 @@
+<Project>
+  <Import Project="$([MSBuild]::GetPathOfFileAbove(Directory.Packages.props, $(MSBuildThisFileDirectory)..))" />
+  <PropertyGroup>
+    <CentralPackageTransitivePinningEnabled>true</CentralPackageTransitivePinningEnabled>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Closed at the next minor rather than left open like the rest of the
+         repository: BenchmarkDotNet is pre-1.0, so the minor is its breaking
+         segment, and an open upper bound would claim a compatibility that has
+         not been established. Restore resolves either form to the lower bound;
+         what differs is what the range says. -->
+    <PackageVersion Include="BenchmarkDotNet" Version="[0.15.8,0.16.0)" />
+    <!-- Transitive of both Npgsql and Testcontainers, and pinned because the two
+         disagree once BenchmarkDotNet is in the picture. BenchmarkDotNet builds a
+         generated project per benchmark class that references this one, and there
+         Npgsql arrives as a file reference rather than as a package, so its
+         dependency on this assembly is not in the graph and Testcontainers' own
+         floor wins - below the version the benchmark assembly was compiled
+         against, which fails at load with a FileNotFoundException naming it. -->
+    <PackageVersion Include="Microsoft.Extensions.Logging.Abstractions" Version="[10.0.0,)" />
+    <!-- Transitive of Testcontainers; pinned above the vulnerable 2025.1.0 (GHSA-q939-rpr3-3284). -->
+    <PackageVersion Include="SSH.NET" Version="[2026.0.0,)" />
+    <PackageVersion Include="Testcontainers.PostgreSql" Version="[4.14.0,)" />
+  </ItemGroup>
+</Project>
