@@ -71,7 +71,7 @@ directives to individual files.
 
 ### Adding a mapped type
 
-Column mapping is organized by PostgreSQL type family — one static class per
+Column mapping is organized by PostgreSQL type family - one static class per
 family under `src/PetToys.DbAssistant.Postgres/Extensions/` (for example,
 `NumericTypeExtensions`, `StringTypeExtensions`). A new `Map*` method binds the
 appropriate `NpgsqlDbType` and funnels into the internal builder, so add it to
