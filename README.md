@@ -188,6 +188,12 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 - **Load into a staging table for the best throughput.** Copy into an unindexed
   temporary or staging table first, then insert from there into the indexed
   target. This keeps the copy itself as cheap as possible.
+- **The mapping costs a few percent.** Measured against the hand-written
+  `NpgsqlBinaryImporter` loop it replaces, a copy of 100,000 rows runs at 1.04x
+  on a four-column row and 1.06x on a twelve-column one, and the extra
+  allocation is a couple of kilobytes per copy rather than per row. The
+  [benchmarks][benchmarks-url] carry the numbers, the machine they were taken
+  on, and what makes a comparison against them valid.
 
 More runnable examples live in the [unit tests][tests-url].
 
@@ -216,3 +222,4 @@ Provided under the [Apache License, Version 2.0][license-url].
 [npgsql]: https://www.nuget.org/packages/Npgsql/
 [binary-import]: https://www.npgsql.org/doc/copy.html#binary-copy
 [tests-url]: https://github.com/pet-toys/db-assistant-postgres/tree/dev/test/PetToys.DbAssistant.Postgres.Test
+[benchmarks-url]: https://github.com/pet-toys/db-assistant-postgres/tree/dev/bench/PetToys.DbAssistant.Postgres.Benchmarks

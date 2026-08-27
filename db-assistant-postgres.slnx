@@ -33,6 +33,11 @@
     <File Path="docs/CONTRIBUTING.md" />
     <File Path="docs/SECURITY.md" />
   </Folder>
+  <Folder Name="/bench/">
+    <File Path="bench/.editorconfig" />
+    <File Path="bench/Directory.Packages.props" />
+    <Project Path="bench/PetToys.DbAssistant.Postgres.Benchmarks/PetToys.DbAssistant.Postgres.Benchmarks.csproj" />
+  </Folder>
   <Folder Name="/src/">
     <Project Path="src/PetToys.DbAssistant.Postgres/PetToys.DbAssistant.Postgres.csproj" />
   </Folder>
