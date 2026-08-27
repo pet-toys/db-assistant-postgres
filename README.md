@@ -194,8 +194,8 @@ await connection.CreateBulkContext<BusinessEntity>("records")
   target. This keeps the copy itself as cheap as possible.
 - **The mapping costs a few percent.** Measured against the hand-written
   `NpgsqlBinaryImporter` loop it replaces, a copy of 100,000 rows runs at 1.08x
-  on a four-column row and 1.04x on a twelve-column one, and the extra
-  allocation is a couple of kilobytes per copy rather than per row. The
+  on a four-column row and 1.04x on a twelve-column one, and it allocates a few
+  kilobytes more per copy - a figure that does not grow with the rows. The
   [benchmarks][benchmarks-url] carry the numbers, the machine they were taken
   on, and what makes a comparison against them valid.
 

@@ -72,12 +72,16 @@ that never actually suspends - so that number is the floor of what
 `IAsyncEnumerable` adds, and a real streaming source pays whatever it costs on
 top.
 
-**The extra allocation is per copy, not per row.** The mapped arm allocates
-about 2 KB more than the hand-written one, and it is the same 2 KB at ten
-thousand rows and at a hundred thousand: the builder, the column list and the
-delegates, all built once. Per row the two arms allocate the same, which is
-visible on the wide row, where both sit on 4.80 MB per copy of a hundred
-thousand rows - Npgsql's own writing, identical on both sides.
+**The extra allocation does not grow with the rows.** The mapped arm allocates
+more than the hand-written one - 1.94 KB and 0.63 KB on the narrow row at ten
+thousand and a hundred thousand rows, 4.67 KB and 7.03 KB on the wide one - and
+none of those differences scales the way the copy does. The wide row allocates
+ten times as much at a hundred thousand rows as at ten thousand, and the gap
+between the two arms grows by half. What the mapping allocates - the builder,
+the column list, the delegates - it allocates once per copy; per row the two
+arms allocate the same, which is why both sit on 4.80 MB for a hundred thousand
+wide rows, Npgsql's own writing on both sides. At that size the gap is under
+0.2% of the copy, which is also about all the diagnoser can resolve.
 
 **The ten-thousand-row rows are not worth quoting.** Their ratio standard
 deviations run from 0.15 to 1.31, and the wide row's mean of 44 ms against a
