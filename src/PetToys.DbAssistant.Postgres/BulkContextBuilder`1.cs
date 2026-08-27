@@ -151,10 +151,10 @@ public sealed class BulkContextBuilder<TEntity>
                 "At least one column must be mapped before data can be copied. Call a Map* method on the bulk context first.");
         }
 
-        var wasClosed = RequiresOpening();
+        var mustOpen = RequiresOpening();
         try
         {
-            if (wasClosed) await _connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            if (mustOpen) await _connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             var binaryCopyWriter = await _connection.BeginBinaryImportAsync(GetCopyCommand(), cancellationToken).ConfigureAwait(false);
             await using (binaryCopyWriter.ConfigureAwait(false))
             {
@@ -164,7 +164,7 @@ public sealed class BulkContextBuilder<TEntity>
         }
         finally
         {
-            if (wasClosed) await _connection.CloseAsync().ConfigureAwait(false);
+            if (mustOpen) await _connection.CloseAsync().ConfigureAwait(false);
         }
     }
 
