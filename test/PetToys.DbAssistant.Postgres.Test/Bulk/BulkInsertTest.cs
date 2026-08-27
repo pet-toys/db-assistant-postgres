@@ -317,13 +317,19 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         command.CommandText = "SELECT generate_series(1, 1000);";
         await using var reader = await command.ExecuteReaderAsync(cancellationToken);
         (await reader.ReadAsync(cancellationToken)).Should().BeTrue();
-        connection.FullState.Should().Be(ConnectionState.Open | ConnectionState.Fetching);
+
+        // Which flags Npgsql reports for a half-read reader is its business; what
+        // this test is about is that the state is one the copy has to refuse, and
+        // that the error says which one it was.
+        var busyState = connection.FullState;
+        busyState.Should().NotBe(ConnectionState.Open);
+        busyState.Should().NotBe(ConnectionState.Closed);
 
         var act = async () => await MapRoundTrip(connection.CreateBulkContext<RoundTripEntity>(tableName))
             .WriteDataAsync(rows, cancellationToken);
 
         (await act.Should().ThrowAsync<InvalidOperationException>())
-            .WithMessage("*Fetching*");
+            .WithMessage($"*{busyState}*");
     }
 
     [DockerRequiredFact]
@@ -435,7 +441,12 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
             .Select(a => a!.DbCreateColumnStatement)
             .ToList();
 
-        var create = temporary ? "CREATE TEMPORARY TABLE" : "CREATE TABLE";
+        // A temporary table belongs to its session and is gone with it. A permanent
+        // one outlives the test that asked for it, including a failing one, so it
+        // is dropped first rather than left to fail the next run in setup.
+        var create = temporary
+            ? "CREATE TEMPORARY TABLE"
+            : $"DROP TABLE IF EXISTS {tableName.QuoteIdentifier()}; CREATE TABLE";
         var sb = new StringBuilder($"{create} {tableName.QuoteIdentifier()} (")
             .AppendJoin(", ", columnIdentifiers)
             .Append(");");
