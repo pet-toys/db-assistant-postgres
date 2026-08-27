@@ -53,7 +53,8 @@ fails mid-stream. This library closes that gap:
   escaped per PostgreSQL rules, so names with special characters or mixed case
   work and identifier injection does not.
 - **Managed connection lifecycle** - a closed connection is opened for the copy
-  and closed again afterwards, leaving it as it was found.
+  and closed again afterwards, leaving it as it was found; one that is neither
+  open nor closed is rejected before the copy starts.
 - **Cancellation** - pass a `CancellationToken` to `WriteDataAsync`; it reaches
   every `await` along the copy.
 - **Multi-targets** `net8.0`, `net9.0`, and `net10.0`.
@@ -164,13 +165,17 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 
 - **The connection is left as it was found.** A connection that is already open
   stays open; a closed one is opened for the copy and closed again afterwards.
+  Any other state - a broken connection, or one busy with another operation -
+  fails with an `InvalidOperationException` naming the state, instead of
+  surfacing as an error from inside the copy.
 - **Arguments are validated up front.** `CreateBulkContext` throws
   `ArgumentNullException` for a null connection and `ArgumentException` for a
   null or whitespace table or schema name; `WriteDataAsync` throws
   `ArgumentNullException` for a null collection - before the connection is ever
   opened.
-- **A copy with no columns writes nothing.** If no `Map*` call was made,
-  `WriteDataAsync` returns `0` without touching the connection.
+- **A copy needs at least one mapped column.** If no `Map*` call was made,
+  `WriteDataAsync` throws `InvalidOperationException` without touching the
+  connection, rather than reporting a silent no-op as `0` rows written.
 - **Identifiers are quoted, not sanitized.** Names are wrapped in double quotes
   and embedded quotes are doubled, so `My"Table` becomes `"My""Table"`. Supply
   the raw name; the library never strips quoting you add yourself.

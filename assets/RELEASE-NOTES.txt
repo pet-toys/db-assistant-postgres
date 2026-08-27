@@ -1,3 +1,25 @@
+10.3.0
+======
+
+Changed:
+- WriteDataAsync now throws InvalidOperationException when no column has been
+  mapped, instead of returning 0 and sending nothing. A builder with no Map*
+  call is a forgotten mapping, not a request for an empty copy, and the silent
+  no-op hid it. Callers that relied on the 0 have to guard the call themselves;
+  nothing else changes.
+- WriteDataAsync now decides what to do from the connection's full state rather
+  than from the two-valued ConnectionState. A closed connection is opened for
+  the copy and closed again, and a broken one is reconnected the same way, both
+  as before. A connection busy with another command or an open reader is now
+  rejected with an InvalidOperationException naming that state, instead of
+  failing from inside the copy with an error that named neither the connection
+  nor what it was doing.
+- The date and time Map* methods name their parameters builder and getter, like
+  every other Map* method. This is source-breaking only for a caller that passed
+  them by name as helper or propertyGetter.
+
+------------------------------------------------------------------------------
+
 10.2.1
 ======
 

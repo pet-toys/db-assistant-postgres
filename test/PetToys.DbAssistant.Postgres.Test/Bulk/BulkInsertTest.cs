@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Linq;
 using System.Net.NetworkInformation;
@@ -305,6 +306,54 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
     }
 
     [DockerRequiredFact]
+    public async Task BulkInsert_BusyConnection_FailsFastNamingTheState()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        var tableName = TableName<RoundTripEntity>();
+        var rows = FakeRoundTripEntity.Generate(1);
+
+        await using var connection = await OpenConnectionAndCreateTableAsync<RoundTripEntity>(tableName);
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT generate_series(1, 1000);";
+        await using var reader = await command.ExecuteReaderAsync(cancellationToken);
+        (await reader.ReadAsync(cancellationToken)).Should().BeTrue();
+        connection.FullState.Should().Be(ConnectionState.Open | ConnectionState.Fetching);
+
+        var act = async () => await MapRoundTrip(connection.CreateBulkContext<RoundTripEntity>(tableName))
+            .WriteDataAsync(rows, cancellationToken);
+
+        (await act.Should().ThrowAsync<InvalidOperationException>())
+            .WithMessage("*Fetching*");
+    }
+
+    [DockerRequiredFact]
+    public async Task BulkInsert_BrokenConnection_IsOpenedForTheCopyAndClosedAgain()
+    {
+        var cancellationToken = TestContext.Current.CancellationToken;
+        // A permanent table, not the temporary one every other test uses: the
+        // session that owns a temporary table dies with the backend this test
+        // terminates on purpose.
+        var tableName = TableName<RoundTripEntity>() + "_broken";
+        var rows = FakeRoundTripEntity.Generate(10);
+
+        await using var connection = await OpenConnectionAndCreateTableAsync<RoundTripEntity>(tableName, temporary: false);
+        await BreakAsync(connection, cancellationToken);
+        connection.FullState.Should().Be(ConnectionState.Broken);
+
+        var written = await MapRoundTrip(connection.CreateBulkContext<RoundTripEntity>(tableName))
+            .WriteDataAsync(rows, cancellationToken);
+
+        written.Should().Be((ulong)rows.Count);
+        connection.FullState.Should().Be(ConnectionState.Closed);
+
+        await connection.OpenAsync(cancellationToken);
+        (await ExecuteCountAsync(connection, tableName, cancellationToken)).Should().Be(rows.Count);
+        await using var drop = connection.CreateCommand();
+        drop.CommandText = $"DROP TABLE {tableName.QuoteIdentifier()};";
+        await drop.ExecuteNonQueryAsync(cancellationToken);
+    }
+
+    [DockerRequiredFact]
     public async Task TimeStampTz_NonUtcDateTime_FailsNamingColumnAndUtcRequirement()
     {
         var cancellationToken = TestContext.Current.CancellationToken;
@@ -322,6 +371,28 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         (await act.Should().ThrowAsync<InvalidOperationException>())
             .WithMessage("*created_at*")
             .WithMessage("*DateTimeKind.Utc*");
+    }
+
+    /// <summary>
+    /// Drives the connection into <see cref="ConnectionState.Broken"/>. Having the
+    /// session terminate its own backend is the one way to get there on demand:
+    /// stopping the container would take the shared fixture down with it, and
+    /// disposing the connection only closes it.
+    /// </summary>
+    private static async Task BreakAsync(NpgsqlConnection connection, CancellationToken cancellationToken)
+    {
+        await using var command = connection.CreateCommand();
+        command.CommandText = "SELECT pg_terminate_backend(pg_backend_pid());";
+
+        try
+        {
+            await command.ExecuteNonQueryAsync(cancellationToken);
+        }
+        catch (NpgsqlException)
+        {
+            // Expected: the server drops the connection mid-command, which is
+            // exactly what leaves it broken.
+        }
     }
 
     private static BulkContextBuilder<RoundTripEntity> MapRoundTrip(BulkContextBuilder<RoundTripEntity> builder) =>
@@ -354,7 +425,7 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
         count.Should().Be(data.Count);
     }
 
-    private async Task<NpgsqlConnection> OpenConnectionAndCreateTableAsync<TEntity>(string tableName)
+    private async Task<NpgsqlConnection> OpenConnectionAndCreateTableAsync<TEntity>(string tableName, bool temporary = true)
         where TEntity : class, new()
     {
         var columnIdentifiers = typeof(TEntity)
@@ -364,7 +435,8 @@ public sealed class BulkInsertTest(PostgresFixture fixture, ITestOutputHelper ou
             .Select(a => a!.DbCreateColumnStatement)
             .ToList();
 
-        var sb = new StringBuilder($"CREATE TEMPORARY TABLE {tableName.QuoteIdentifier()} (")
+        var create = temporary ? "CREATE TEMPORARY TABLE" : "CREATE TABLE";
+        var sb = new StringBuilder($"{create} {tableName.QuoteIdentifier()} (")
             .AppendJoin(", ", columnIdentifiers)
             .Append(");");
         var connection = (NpgsqlConnection)fixture.CreateConnection();
