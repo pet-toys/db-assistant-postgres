@@ -21,15 +21,16 @@ public class SourceShapeBenchmarks : CopyBenchmark<NarrowRow>
 
     protected override string TableName => Table;
 
-    protected override string CreateTableStatement =>
-        $"""
-         CREATE UNLOGGED TABLE {Table} (
-             id integer NOT NULL,
-             name text NOT NULL,
-             created_at timestamptz NOT NULL,
-             active boolean NOT NULL
-         );
-         """;
+    // The same four columns NarrowRowBenchmarks uses, in a table of their own: two classes
+    // sharing one destination would have each other's leftovers to truncate, and BenchmarkDotNet
+    // runs them in processes that know nothing about one another.
+    protected override IReadOnlyList<ColumnSpec> Columns { get; } =
+    [
+        new("id", "integer"),
+        new("name", "text"),
+        new("created_at", "timestamptz"),
+        new("active", "boolean"),
+    ];
 
     protected override IReadOnlyList<NarrowRow> GenerateRows(int count) => RowSet.Narrow(count);
 

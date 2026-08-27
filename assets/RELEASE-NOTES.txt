@@ -20,7 +20,7 @@ Changed:
 
 Added:
 - The README now says what the fluent mapping costs against the hand-written
-  NpgsqlBinaryImporter loop it replaces: 1.04x on a four-column row and 1.06x on
+  NpgsqlBinaryImporter loop it replaces: 1.08x on a four-column row and 1.04x on
   a twelve-column one at 100,000 rows, with the extra allocation per copy rather
   than per row. The numbers come from a benchmark project added to the
   repository, which also records the machine and the server they were taken on.

@@ -19,20 +19,15 @@ public class NarrowRowBenchmarks : CopyBenchmark<NarrowRow>
 {
     private const string Table = "narrow_row";
 
-    private const string CopyCommand =
-        """COPY "narrow_row"("id", "name", "created_at", "active") FROM STDIN BINARY;""";
-
     protected override string TableName => Table;
 
-    protected override string CreateTableStatement =>
-        $"""
-         CREATE UNLOGGED TABLE {Table} (
-             id integer NOT NULL,
-             name text NOT NULL,
-             created_at timestamptz NOT NULL,
-             active boolean NOT NULL
-         );
-         """;
+    protected override IReadOnlyList<ColumnSpec> Columns { get; } =
+    [
+        new("id", "integer"),
+        new("name", "text"),
+        new("created_at", "timestamptz"),
+        new("active", "boolean"),
+    ];
 
     protected override IReadOnlyList<NarrowRow> GenerateRows(int count) => RowSet.Narrow(count);
 

@@ -9,9 +9,12 @@ namespace PetToys.DbAssistant.Postgres.Benchmarks;
 /// </summary>
 /// <remarks>
 /// <para>
-/// By default the run provisions its own: a container from a pinned image, started once per
-/// benchmark class, since BenchmarkDotNet gives every class a process of its own. Seconds of
-/// startup against minutes of measurement.
+/// By default the run provisions its own: a container from a pinned image, started once for the
+/// whole run by <see cref="Program"/> and published to the benchmark processes through
+/// <see cref="ConnectionStringVariable"/>. It is deliberately not started from
+/// <c>[GlobalSetup]</c>: BenchmarkDotNet runs every benchmark case in a process of its own, so
+/// that would be one container per case, and the two arms of a ratio would be measured against
+/// two different servers.
 /// </para>
 /// <para>
 /// A container on an overlay filesystem, with default <c>fsync</c> and default

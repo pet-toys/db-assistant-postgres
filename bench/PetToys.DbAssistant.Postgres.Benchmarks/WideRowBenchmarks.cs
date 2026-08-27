@@ -19,30 +19,23 @@ public class WideRowBenchmarks : CopyBenchmark<WideRow>
 {
     private const string Table = "wide_row";
 
-    private const string CopyCommand =
-        """
-        COPY "wide_row"("id", "code", "name", "amount", "ratio", "flag", "identifier", "payload", "document", "address", "created_at", "duration") FROM STDIN BINARY;
-        """;
-
     protected override string TableName => Table;
 
-    protected override string CreateTableStatement =>
-        $"""
-         CREATE UNLOGGED TABLE {Table} (
-             id integer NOT NULL,
-             code varchar(32) NOT NULL,
-             name text NOT NULL,
-             amount numeric NOT NULL,
-             ratio double precision NOT NULL,
-             flag boolean NOT NULL,
-             identifier uuid NOT NULL,
-             payload bytea NOT NULL,
-             document jsonb NOT NULL,
-             address inet NOT NULL,
-             created_at timestamptz NOT NULL,
-             duration interval NOT NULL
-         );
-         """;
+    protected override IReadOnlyList<ColumnSpec> Columns { get; } =
+    [
+        new("id", "integer"),
+        new("code", "varchar(32)"),
+        new("name", "text"),
+        new("amount", "numeric"),
+        new("ratio", "double precision"),
+        new("flag", "boolean"),
+        new("identifier", "uuid"),
+        new("payload", "bytea"),
+        new("document", "jsonb"),
+        new("address", "inet"),
+        new("created_at", "timestamptz"),
+        new("duration", "interval"),
+    ];
 
     protected override IReadOnlyList<WideRow> GenerateRows(int count) => RowSet.Wide(count);
 

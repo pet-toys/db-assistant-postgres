@@ -53,8 +53,8 @@ fails mid-stream. This library closes that gap:
   escaped per PostgreSQL rules, so names with special characters or mixed case
   work and identifier injection does not.
 - **Managed connection lifecycle** - a closed connection is opened for the copy
-  and closed again afterwards, leaving it as it was found; one that is neither
-  open nor closed is rejected before the copy starts.
+  and closed again afterwards, leaving it as it was found; one that is busy with
+  another command is rejected before the copy starts.
 - **Cancellation** - pass a `CancellationToken` to `WriteDataAsync`; it reaches
   every `await` along the copy.
 - **Multi-targets** `net8.0`, `net9.0`, and `net10.0`.
@@ -165,9 +165,13 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 
 - **The connection is left as it was found.** A connection that is already open
   stays open; a closed one is opened for the copy and closed again afterwards.
-  Any other state - a broken connection, or one busy with another operation -
-  fails with an `InvalidOperationException` naming the state, instead of
-  surfacing as an error from inside the copy.
+  A broken one is opened the same way - Npgsql reconnects it - and closed again,
+  which also means it comes back without whatever session state it carried: a
+  temporary table created before the break is gone.
+- **A busy connection is rejected, not queued.** A connection executing another
+  command or holding an open reader fails with an `InvalidOperationException`
+  naming that state, before the copy starts, instead of surfacing as an error
+  from inside it. Run the copy on a connection of its own.
 - **Arguments are validated up front.** `CreateBulkContext` throws
   `ArgumentNullException` for a null connection and `ArgumentException` for a
   null or whitespace table or schema name; `WriteDataAsync` throws
@@ -189,8 +193,8 @@ await connection.CreateBulkContext<BusinessEntity>("records")
   temporary or staging table first, then insert from there into the indexed
   target. This keeps the copy itself as cheap as possible.
 - **The mapping costs a few percent.** Measured against the hand-written
-  `NpgsqlBinaryImporter` loop it replaces, a copy of 100,000 rows runs at 1.04x
-  on a four-column row and 1.06x on a twelve-column one, and the extra
+  `NpgsqlBinaryImporter` loop it replaces, a copy of 100,000 rows runs at 1.08x
+  on a four-column row and 1.04x on a twelve-column one, and the extra
   allocation is a couple of kilobytes per copy rather than per row. The
   [benchmarks][benchmarks-url] carry the numbers, the machine they were taken
   on, and what makes a comparison against them valid.

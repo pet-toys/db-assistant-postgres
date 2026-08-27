@@ -17,8 +17,16 @@ dotnet run -c Release -f net10.0 --project bench/PetToys.DbAssistant.Postgres.Be
 ```
 
 The run needs a Docker engine that can run Linux containers, the same thing the
-integration tests need. It starts `postgres:18-alpine` itself, once per
-benchmark class, and stops it again at the end.
+integration tests need. It starts one `postgres:18-alpine` container for the
+whole run and stops it again at the end.
+
+The container is started by the runner and handed to the benchmark processes
+through `POSTGRES_BENCHMARK_CONNECTION_STRING`, not started from
+`[GlobalSetup]`. BenchmarkDotNet gives every benchmark case - each method at
+each row count - a process of its own, so a container started from the setup
+is a container per case, and the baseline and the measured arm of a ratio end
+up on two different servers. That is the one difference a ratio cannot cancel
+out, so it is not allowed to exist.
 
 One group at a time is usually what you want:
 
@@ -46,8 +54,11 @@ you actually copy into.
 
 The run creates its three tables in whatever database the connection string
 names, dropping them first if they are already there: `narrow_row`, `wide_row`
-and `source_shape_row`. It truncates them between iterations and leaves them
-behind at the end. Point it at a scratch database.
+and `source_shape_row`. Each is generated from the column list its benchmark
+class declares, which is the same list the hand-written arm's `COPY` command is
+built from - one declaration, so the schema and the command cannot drift apart.
+The tables are truncated between iterations and left behind at the end. Point
+the run at a scratch database.
 
 ## What is measured
 
