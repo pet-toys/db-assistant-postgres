@@ -38,7 +38,7 @@ When reporting, please include as much of the following as you can:
 
 This library maps entity properties to columns and streams the values into
 PostgreSQL through Npgsql's binary `COPY` import. It does not open connections,
-manage credentials, or build ad-hoc SQL text on your behalf — the caller
+manage credentials, or build ad-hoc SQL text on your behalf - the caller
 supplies an already configured `NpgsqlConnection` and the destination table
 name. Reports about how the mapping or the generated `COPY` command could
 mishandle data, or how a caller-supplied table, schema, or column name could be

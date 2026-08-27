@@ -4,14 +4,14 @@
 
 ![Database Assistant for PostgreSQL](https://raw.githubusercontent.com/pet-toys/db-assistant-postgres/refs/heads/dev/assets/promotion.png)
 
-> Pour millions of rows into PostgreSQL at binary-`COPY` speed — a fluent,
+> Pour millions of rows into PostgreSQL at binary-`COPY` speed - a fluent,
 > strongly-typed mapping API over [Npgsql][npgsql], no `DataTable`, no
 > hand-rolled writers, just `COPY ... FROM STDIN BINARY` doing what it does
 > best.
 
 A small, focused wrapper around Npgsql's [binary import][binary-import]. Map
 each entity property to a PostgreSQL column with a type-specific `Map*` method,
-then stream an `IEnumerable<TEntity>` — or an `IAsyncEnumerable<TEntity>` —
+then stream an `IEnumerable<TEntity>` - or an `IAsyncEnumerable<TEntity>` -
 straight into the server. The library writes the binary `COPY` protocol for
 you, quotes every identifier, and leaves the connection exactly as it found it.
 
@@ -20,13 +20,13 @@ you, quotes every identifier, and leaves the connection exactly as it found it.
 `COPY ... FROM STDIN BINARY` is the fastest way to load many rows into
 PostgreSQL, but Npgsql exposes it as a low-level writer: you open the importer,
 start each row, and push every value with its `NpgsqlDbType` by hand. That is
-fast but easy to get wrong — one mismatched type or forgotten null and the copy
+fast but easy to get wrong - one mismatched type or forgotten null and the copy
 fails mid-stream. This library closes that gap:
 
 - **Stream, don't stage.** Rows flow through the binary importer one at a time,
   so a million-row insert never materializes a million-row buffer in memory.
 - **Map to PostgreSQL types, not magic strings.** `MapJsonb`, `MapMoney`,
-  `MapUUID`, `MapTimeStampTz`, `MapInetAddress` — each method binds the right
+  `MapUUID`, `MapTimeStampTz`, `MapInetAddress` - each method binds the right
   `NpgsqlDbType`, so the wire format matches the column.
 - **Let nulls just work.** A mapped getter that returns `null` writes a SQL
   `NULL`; everything else is written with its declared type. Nullable value
@@ -37,7 +37,7 @@ fails mid-stream. This library closes that gap:
 
 ## Features
 
-- **Fluent builder** — `CreateBulkContext` → `Map*` → `WriteDataAsync`.
+- **Fluent builder** - `CreateBulkContext` → `Map*` → `WriteDataAsync`.
 - **Type-specific column mapping** for the PostgreSQL type families: text
   (`MapText`, `MapVarchar`, `MapCharacter`), numeric (`MapSmallInt`,
   `MapInteger`, `MapBigInt`, `MapNumeric`, `MapReal`, `MapDouble`), monetary
@@ -45,16 +45,16 @@ fails mid-stream. This library closes that gap:
   (`MapJson`, `MapJsonb`), UUID (`MapUUID`), date/time (`MapDate`, `MapTime`,
   `MapTimeTz`, `MapTimeStamp`, `MapTimeStampTz`, `MapInterval`), and network
   addresses (`MapInetAddress`, `MapMacAddress`).
-- **Synchronous and asynchronous sources** — `WriteDataAsync` accepts both
+- **Synchronous and asynchronous sources** - `WriteDataAsync` accepts both
   `IEnumerable<TEntity>` and `IAsyncEnumerable<TEntity>`.
-- **Null-aware writes** — a getter returning `null` emits a SQL `NULL`; no
+- **Null-aware writes** - a getter returning `null` emits a SQL `NULL`; no
   sentinel values, no special casing.
-- **Safe identifier quoting** — table, schema, and column names are wrapped and
+- **Safe identifier quoting** - table, schema, and column names are wrapped and
   escaped per PostgreSQL rules, so names with special characters or mixed case
   work and identifier injection does not.
-- **Managed connection lifecycle** — a closed connection is opened for the copy
+- **Managed connection lifecycle** - a closed connection is opened for the copy
   and closed again afterwards, leaving it as it was found.
-- **Cancellation** — pass a `CancellationToken` to `WriteDataAsync`; it reaches
+- **Cancellation** - pass a `CancellationToken` to `WriteDataAsync`; it reaches
   every `await` along the copy.
 - **Multi-targets** `net8.0`, `net9.0`, and `net10.0`.
 
@@ -126,8 +126,8 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 
 ### Streaming an async source
 
-When rows arrive from an asynchronous producer — a paged query, a channel, a
-stream — pass the `IAsyncEnumerable<TEntity>` directly. Nothing is buffered:
+When rows arrive from an asynchronous producer - a paged query, a channel, a
+stream - pass the `IAsyncEnumerable<TEntity>` directly. Nothing is buffered:
 
 ```csharp
 async IAsyncEnumerable<BusinessEntity> ReadAsync() { /* yield rows */ }
@@ -167,7 +167,7 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 - **Arguments are validated up front.** `CreateBulkContext` throws
   `ArgumentNullException` for a null connection and `ArgumentException` for a
   null or whitespace table or schema name; `WriteDataAsync` throws
-  `ArgumentNullException` for a null collection — before the connection is ever
+  `ArgumentNullException` for a null collection - before the connection is ever
   opened.
 - **A copy with no columns writes nothing.** If no `Map*` call was made,
   `WriteDataAsync` returns `0` without touching the connection.
@@ -177,7 +177,7 @@ await connection.CreateBulkContext<BusinessEntity>("records")
 - **`timestamptz` from a `DateTime` must be UTC.** `MapTimeStampTz` with a
   `DateTime` getter accepts only `DateTimeKind.Utc`; a `Local` or `Unspecified`
   value fails the copy with an error naming the column. Convert to UTC
-  (`DateTime.ToUniversalTime()`), or map from a `DateTimeOffset` — the
+  (`DateTime.ToUniversalTime()`), or map from a `DateTimeOffset` - the
   `MapTimeStampTz(..., Func<TEntity, DateTimeOffset?>)` overload carries the
   offset for you.
 - **Load into a staging table for the best throughput.** Copy into an unindexed
