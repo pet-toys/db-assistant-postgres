@@ -124,26 +124,26 @@ public sealed class BulkContextValidationTest
     }
 
     [Fact]
-    public async Task WriteDataAsync_NoColumnsMapped_ReturnsZeroWithoutOpeningConnection()
+    public async Task WriteDataAsync_NoColumnsMapped_ThrowsWithoutOpeningConnection()
     {
         using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders");
 
-        var written = await context.WriteDataAsync(new[] { new Sample() }, TestContext.Current.CancellationToken);
+        var act = async () => await context.WriteDataAsync(new[] { new Sample() }, TestContext.Current.CancellationToken);
 
-        written.Should().Be(0UL);
+        (await act.Should().ThrowAsync<InvalidOperationException>()).WithMessage("*at least one column*");
         connection.State.Should().Be(ConnectionState.Closed);
     }
 
     [Fact]
-    public async Task WriteDataAsync_NoColumnsMapped_AsyncEnumerable_ReturnsZeroWithoutOpeningConnection()
+    public async Task WriteDataAsync_NoColumnsMapped_AsyncEnumerable_ThrowsWithoutOpeningConnection()
     {
         using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders");
 
-        var written = await context.WriteDataAsync(AsyncSamples(), TestContext.Current.CancellationToken);
+        var act = async () => await context.WriteDataAsync(AsyncSamples(), TestContext.Current.CancellationToken);
 
-        written.Should().Be(0UL);
+        (await act.Should().ThrowAsync<InvalidOperationException>()).WithMessage("*at least one column*");
         connection.State.Should().Be(ConnectionState.Closed);
 
         static async IAsyncEnumerable<Sample> AsyncSamples()
@@ -180,7 +180,7 @@ public sealed class BulkContextValidationTest
     }
 
     [Fact]
-    public async Task WriteDataAsync_NullEntities_NoColumnsMapped_ThrowsInsteadOfReturningZero()
+    public async Task WriteDataAsync_NullEntities_NoColumnsMapped_ThrowsForEntitiesFirst()
     {
         using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders");

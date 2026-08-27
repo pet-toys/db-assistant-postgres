@@ -41,34 +41,20 @@ public sealed class BulkContextBuilder<TEntity>
     /// </summary>
     /// <param name="entities">The entities to copy.</param>
     /// <param name="cancellationToken">Cancels the copy.</param>
-    /// <returns>
-    /// The number of rows written, or zero when no column has been mapped, in
-    /// which case nothing is sent.
-    /// </returns>
+    /// <returns>The number of rows written.</returns>
     /// <remarks>
-    /// A closed connection is opened for the copy and closed again afterwards;
-    /// one that was already open is left open.
+    /// A closed connection is opened for the copy and closed again afterwards, as
+    /// is a broken one; a connection that was already open is left open.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="entities"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// No column has been mapped, or the connection is busy with another operation.
+    /// </exception>
     public async ValueTask<ulong> WriteDataAsync(IEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entities);
-        if (_columns.Count == 0) return 0;
-        var wasClosed = _connection.State == ConnectionState.Closed;
-        try
-        {
-            if (wasClosed) await _connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            var binaryCopyWriter = await _connection.BeginBinaryImportAsync(GetCopyCommand(), cancellationToken).ConfigureAwait(false);
-            await using (binaryCopyWriter.ConfigureAwait(false))
-            {
-                await WriteToStreamAsync(binaryCopyWriter, entities, cancellationToken).ConfigureAwait(false);
-                return await binaryCopyWriter.CompleteAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            if (wasClosed) await _connection.CloseAsync().ConfigureAwait(false);
-        }
+
+        return await CopyAsync((writer, token) => WriteToStreamAsync(writer, entities, token), cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -76,34 +62,20 @@ public sealed class BulkContextBuilder<TEntity>
     /// </summary>
     /// <param name="entities">The entities to copy.</param>
     /// <param name="cancellationToken">Cancels the copy.</param>
-    /// <returns>
-    /// The number of rows written, or zero when no column has been mapped, in
-    /// which case nothing is sent.
-    /// </returns>
+    /// <returns>The number of rows written.</returns>
     /// <remarks>
-    /// A closed connection is opened for the copy and closed again afterwards;
-    /// one that was already open is left open.
+    /// A closed connection is opened for the copy and closed again afterwards, as
+    /// is a broken one; a connection that was already open is left open.
     /// </remarks>
     /// <exception cref="ArgumentNullException"><paramref name="entities"/> is <see langword="null"/>.</exception>
+    /// <exception cref="InvalidOperationException">
+    /// No column has been mapped, or the connection is busy with another operation.
+    /// </exception>
     public async ValueTask<ulong> WriteDataAsync(IAsyncEnumerable<TEntity> entities, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(entities);
-        if (_columns.Count == 0) return 0;
-        var wasClosed = _connection.State == ConnectionState.Closed;
-        try
-        {
-            if (wasClosed) await _connection.OpenAsync(cancellationToken).ConfigureAwait(false);
-            var binaryCopyWriter = await _connection.BeginBinaryImportAsync(GetCopyCommand(), cancellationToken).ConfigureAwait(false);
-            await using (binaryCopyWriter.ConfigureAwait(false))
-            {
-                await WriteToStreamAsync(binaryCopyWriter, entities, cancellationToken).ConfigureAwait(false);
-                return await binaryCopyWriter.CompleteAsync(cancellationToken).ConfigureAwait(false);
-            }
-        }
-        finally
-        {
-            if (wasClosed) await _connection.CloseAsync().ConfigureAwait(false);
-        }
+
+        return await CopyAsync((writer, token) => WriteToStreamAsync(writer, entities, token), cancellationToken).ConfigureAwait(false);
     }
 
     internal BulkContextBuilder<TEntity> Map<TProperty>(string columnName, Func<TEntity, TProperty?> getter, NpgsqlDbType dbType)
@@ -163,6 +135,66 @@ public sealed class BulkContextBuilder<TEntity>
             },
             NpgsqlDbType.TimestampTz,
             typeof(DateTime));
+    }
+
+    /// <summary>
+    /// Runs one binary <c>COPY</c>: it validates the mapping and the connection,
+    /// opens the connection for the duration if it is not already open - which
+    /// includes a broken one, see <see cref="RequiresOpening"/> - and hands the
+    /// importer to <paramref name="writeRows"/>, which is the only part the two
+    /// public overloads differ in.
+    /// </summary>
+    private async ValueTask<ulong> CopyAsync(Func<NpgsqlBinaryImporter, CancellationToken, Task> writeRows, CancellationToken cancellationToken)
+    {
+        if (_columns.Count == 0)
+        {
+            throw new InvalidOperationException(
+                "At least one column must be mapped before data can be copied. Call a Map* method on the bulk context first.");
+        }
+
+        var mustOpen = RequiresOpening();
+        try
+        {
+            if (mustOpen) await _connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            var binaryCopyWriter = await _connection.BeginBinaryImportAsync(GetCopyCommand(), cancellationToken).ConfigureAwait(false);
+            await using (binaryCopyWriter.ConfigureAwait(false))
+            {
+                await writeRows(binaryCopyWriter, cancellationToken).ConfigureAwait(false);
+                return await binaryCopyWriter.CompleteAsync(cancellationToken).ConfigureAwait(false);
+            }
+        }
+        finally
+        {
+            if (mustOpen) await _connection.CloseAsync().ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// Decides whether the copy has to open the connection itself, and rejects the
+    /// states it can do neither from.
+    /// </summary>
+    /// <remarks>
+    /// The decision reads <see cref="NpgsqlConnection.FullState"/>, not
+    /// <see cref="NpgsqlConnection.State"/>: the latter collapses every state into
+    /// <see cref="ConnectionState.Open"/> or <see cref="ConnectionState.Closed"/>,
+    /// so a connection busy with another command reports itself as open, the copy
+    /// proceeds, and the importer fails with an error that names neither the
+    /// connection nor what it was doing. A broken connection is opened like a
+    /// closed one - Npgsql resets and reconnects it, which is the behaviour this
+    /// type has always had - and is closed again afterwards.
+    /// </remarks>
+    private bool RequiresOpening()
+    {
+        var state = _connection.FullState;
+
+        return state switch
+        {
+            ConnectionState.Closed or ConnectionState.Broken => true,
+            ConnectionState.Open => false,
+            _ => throw new InvalidOperationException(
+                $"The connection cannot start a copy while it is {state}. Let it finish its current " +
+                "operation, or run the copy on a connection of its own."),
+        };
     }
 
     private async Task WriteToStreamAsync(NpgsqlBinaryImporter writer, IEnumerable<TEntity> entities, CancellationToken cancellationToken)
