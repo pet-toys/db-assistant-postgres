@@ -5,9 +5,10 @@
 ![Database Assistant for PostgreSQL](https://raw.githubusercontent.com/pet-toys/db-assistant-postgres/refs/heads/dev/assets/promotion.png)
 
 > Pour millions of rows into PostgreSQL at binary-`COPY` speed - a fluent,
-> strongly-typed mapping API over [Npgsql][npgsql], no `DataTable`, no
+> strongly-typed mapping API over [Npgsql][npgsql]. No `DataTable`, no
 > hand-rolled writers, just `COPY ... FROM STDIN BINARY` doing what it does
-> best.
+> best, for [a few percent][performance] more than writing that writer
+> yourself.
 
 A small, focused wrapper around Npgsql's [binary import][binary-import]. Map
 each entity property to a PostgreSQL column with a type-specific `Map*` method,
@@ -34,6 +35,8 @@ fails mid-stream. This library closes that gap:
 - **Stay safe and in control.** Every table, schema, and column name is quoted
   per PostgreSQL rules, duplicate columns are rejected up front, and a
   `CancellationToken` flows all the way through the copy.
+- **Pay almost nothing for it.** The convenience is not the cost: every release
+  is [measured][performance] against the hand-written loop it replaces.
 
 ## Features
 
@@ -46,7 +49,8 @@ fails mid-stream. This library closes that gap:
   `MapTimeTz`, `MapTimeStamp`, `MapTimeStampTz`, `MapInterval`), and network
   addresses (`MapInetAddress`, `MapMacAddress`).
 - **Synchronous and asynchronous sources** - `WriteDataAsync` accepts both
-  `IEnumerable<TEntity>` and `IAsyncEnumerable<TEntity>`.
+  `IEnumerable<TEntity>` and `IAsyncEnumerable<TEntity>`, and the async one
+  costs no more than the sync one.
 - **Null-aware writes** - a getter returning `null` emits a SQL `NULL`; no
   sentinel values, no special casing.
 - **Safe identifier quoting** - table, schema, and column names are wrapped and
@@ -55,6 +59,8 @@ fails mid-stream. This library closes that gap:
 - **Managed connection lifecycle** - a closed connection is opened for the copy
   and closed again afterwards, leaving it as it was found; one that is busy with
   another command is rejected before the copy starts.
+- **Misuse fails fast** - an unmapped builder, a null argument, a blank table
+  name and a busy connection each throw before a single byte reaches the wire.
 - **Cancellation** - pass a `CancellationToken` to `WriteDataAsync`; it reaches
   every `await` along the copy.
 - **Multi-targets** `net8.0`, `net9.0`, and `net10.0`.
@@ -161,6 +167,42 @@ await connection.CreateBulkContext<BusinessEntity>("records")
     .WriteDataAsync(entities, cancellationToken);
 ```
 
+## Performance
+
+The mapping is the convenience; the point is that it is not the cost. Every
+release is measured against the hand-written `NpgsqlBinaryImporter` loop this
+library exists to replace: the same values, in the same order, with the same
+`NpgsqlDbType`, into the same table, with only the loop changing hands.
+
+From the [recorded baseline][baseline-url], one copy of 100,000 rows:
+
+| Copy of 100,000 rows       | Compared against      |  Baseline |  Measured |     Ratio |
+| -------------------------- | --------------------- | --------: | --------: | --------: |
+| Four-column row            | hand-written importer |  48.59 ms |  52.43 ms | **1.08x** |
+| Twelve-column row          | hand-written importer | 241.53 ms | 249.70 ms | **1.04x** |
+| Async source, four columns | `IEnumerable` source  |  52.47 ms |  52.99 ms | **1.01x** |
+
+- **The wider the row, the smaller the share.** The overhead is per row and per
+  column, while the server's part of a copy grows faster than either - so
+  tripling the columns dilutes the mapping instead of multiplying it.
+- **The extra allocation is per copy, not per row.** 0.63 KB on the narrow row
+  and 7.03 KB on the wide one at 100,000 rows: the builder, the column list and
+  the delegates, allocated once. Per row both arms allocate the same, and at
+  that size the gap is under 0.2% of what the copy allocates in total.
+- **Ratios travel, milliseconds do not.** Those durations come from one laptop,
+  one `postgres:18-alpine` container over a loopback, and `UNLOGGED` destination
+  tables - a floor, not the cost of a copy into your own indexed table. Compare
+  a run of your own by its ratio.
+- **Load into a staging table for the best throughput.** Copy into an unindexed
+  temporary or staging table first, then insert from there into the indexed
+  target. That keeps the copy itself as cheap as it can be, and it is worth far
+  more than the few percent above.
+
+The [benchmark project][benchmarks-url] runs on any machine with a Docker
+engine, or against a server of your own; [`BASELINE.md`][baseline-url] is the
+run quoted here, environment header and all. Nothing in the build gates on
+these numbers - they are a measurement, not a promise.
+
 ## Good to know
 
 - **The connection is left as it was found.** A connection that is already open
@@ -189,22 +231,15 @@ await connection.CreateBulkContext<BusinessEntity>("records")
   (`DateTime.ToUniversalTime()`), or map from a `DateTimeOffset` - the
   `MapTimeStampTz(..., Func<TEntity, DateTimeOffset?>)` overload carries the
   offset for you.
-- **Load into a staging table for the best throughput.** Copy into an unindexed
-  temporary or staging table first, then insert from there into the indexed
-  target. This keeps the copy itself as cheap as possible.
-- **The mapping costs a few percent.** Measured against the hand-written
-  `NpgsqlBinaryImporter` loop it replaces, a copy of 100,000 rows runs at 1.08x
-  on a four-column row and 1.04x on a twelve-column one, and it allocates a few
-  kilobytes more per copy - a figure that does not grow with the rows. The
-  [benchmarks][benchmarks-url] carry the numbers, the machine they were taken
-  on, and what makes a comparison against them valid.
 
 More runnable examples live in the [unit tests][tests-url].
 
 ## Roadmap
 
-- High-performance binary import/export between a table and a stream.
-- CSV import/export.
+- Array columns, `DateOnly` and `TimeOnly` mapping, and read-only access to the
+  columns a context has mapped.
+- Binary `COPY` export from a table to a stream, and CSV in both directions.
+- An upsert helper around the staging-table pattern.
 - Whatever the next real use case calls for.
 
 This package is built for its author's own needs; feature requests and pull
@@ -225,5 +260,7 @@ Provided under the [Apache License, Version 2.0][license-url].
 [contributing]: https://github.com/pet-toys/db-assistant-postgres/blob/dev/docs/CONTRIBUTING.md
 [npgsql]: https://www.nuget.org/packages/Npgsql/
 [binary-import]: https://www.npgsql.org/doc/copy.html#binary-copy
+[performance]: https://github.com/pet-toys/db-assistant-postgres#performance
 [tests-url]: https://github.com/pet-toys/db-assistant-postgres/tree/dev/test/PetToys.DbAssistant.Postgres.Test
 [benchmarks-url]: https://github.com/pet-toys/db-assistant-postgres/tree/dev/bench/PetToys.DbAssistant.Postgres.Benchmarks
+[baseline-url]: https://github.com/pet-toys/db-assistant-postgres/blob/dev/bench/PetToys.DbAssistant.Postgres.Benchmarks/BASELINE.md
