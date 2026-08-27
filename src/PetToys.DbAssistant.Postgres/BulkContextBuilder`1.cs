@@ -139,9 +139,10 @@ public sealed class BulkContextBuilder<TEntity>
 
     /// <summary>
     /// Runs one binary <c>COPY</c>: it validates the mapping and the connection,
-    /// opens a closed connection for the duration, and hands the importer to
-    /// <paramref name="writeRows"/>, which is the only part the two public
-    /// overloads differ in.
+    /// opens the connection for the duration if it is not already open - which
+    /// includes a broken one, see <see cref="RequiresOpening"/> - and hands the
+    /// importer to <paramref name="writeRows"/>, which is the only part the two
+    /// public overloads differ in.
     /// </summary>
     private async ValueTask<ulong> CopyAsync(Func<NpgsqlBinaryImporter, CancellationToken, Task> writeRows, CancellationToken cancellationToken)
     {
