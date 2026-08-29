@@ -126,7 +126,7 @@ public sealed class BulkContextValidationTest
     [Fact]
     public async Task WriteDataAsync_NoColumnsMapped_ThrowsWithoutOpeningConnection()
     {
-        using var connection = new NpgsqlConnection();
+        await using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders");
 
         var act = async () => await context.WriteDataAsync(new[] { new Sample() }, TestContext.Current.CancellationToken);
@@ -138,7 +138,7 @@ public sealed class BulkContextValidationTest
     [Fact]
     public async Task WriteDataAsync_NoColumnsMapped_AsyncEnumerable_ThrowsWithoutOpeningConnection()
     {
-        using var connection = new NpgsqlConnection();
+        await using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders");
 
         var act = async () => await context.WriteDataAsync(AsyncSamples(), TestContext.Current.CancellationToken);
@@ -156,7 +156,7 @@ public sealed class BulkContextValidationTest
     [Fact]
     public async Task WriteDataAsync_NullEntities_ThrowsForEntities_AndLeavesConnectionClosed()
     {
-        using var connection = new NpgsqlConnection();
+        await using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders")
             .MapText("name", entity => entity.Name);
 
@@ -169,7 +169,7 @@ public sealed class BulkContextValidationTest
     [Fact]
     public async Task WriteDataAsync_NullAsyncEntities_ThrowsForEntities_AndLeavesConnectionClosed()
     {
-        using var connection = new NpgsqlConnection();
+        await using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders")
             .MapText("name", entity => entity.Name);
 
@@ -182,7 +182,7 @@ public sealed class BulkContextValidationTest
     [Fact]
     public async Task WriteDataAsync_NullEntities_NoColumnsMapped_ThrowsForEntitiesFirst()
     {
-        using var connection = new NpgsqlConnection();
+        await using var connection = new NpgsqlConnection();
         var context = connection.CreateBulkContext<Sample>("orders");
 
         var act = async () => await context.WriteDataAsync((IEnumerable<Sample>)null!, TestContext.Current.CancellationToken);
